@@ -1,8 +1,7 @@
 import bindings from "bindings";
-import * as os from "os";
 import { Readable } from "stream";
 import VAD from "webrtcvad";
-import uuid from "uuid/v4";
+import { v4 as uuid } from "uuid";
 const portAudioBindings = bindings("portaudio.node");
 
 export type Trigger = {
