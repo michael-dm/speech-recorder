@@ -53,6 +53,8 @@ export class SpeechRecorder {
   private consecutiveSilence: number = 0;
   private error: null | ((e: any) => void) = null;
   private framesPerBuffer: number = 320;
+  private channelNumber: number = 1;
+  private channelId: number = 0;
   private highWaterMark: number = 64000;
   private leadingBuffer: Buffer[] = [];
   private leadingPadding: number = 30;
@@ -70,6 +72,14 @@ export class SpeechRecorder {
 
     if (options.framesPerBuffer) {
       this.framesPerBuffer = options.framesPerBuffer;
+    }
+
+    if (options.channelNumber) {
+      this.channelNumber = options.channelNumber;
+    }
+
+    if (options.channelId) {
+      this.channelId = options.channelId;
     }
 
     if (options.highWaterMark) {
@@ -99,7 +109,16 @@ export class SpeechRecorder {
     this.vad = new VAD(this.sampleRate, options.level || 3);
   }
 
-  onData(startOptions: any, audio: any) {
+  onData(startOptions: any, originalAudio: any) {
+    let frames = [];
+    for (let i = 0; i < originalAudio.length; i += this.channelNumber * 2) {
+      // slicing frame (a buffer of 2 bytes) from the desired channel
+      frames.push(
+        originalAudio.slice(i + this.channelId * 2, i + this.channelId * 2 + 2)
+      );
+    }
+    const audio = Buffer.concat(frames);
+
     let sum = 0;
     for (let i = 0; i < audio.length; i += 2) {
       sum += Math.pow(audio.readInt16LE(i), 2);
@@ -173,7 +192,7 @@ export class SpeechRecorder {
   start(startOptions: any = {}) {
     this.leadingBuffer = [];
     this.audioStream = new AudioStream({
-      channelCount: 1,
+      channelCount: this.channelNumber,
       deviceId: startOptions.deviceId || -1,
       error: this.error,
       highWaterMark: this.highWaterMark,
