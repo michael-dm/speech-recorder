@@ -1,11 +1,20 @@
-const fs = require("fs");
-const { SpeechRecorder } = require("../dist/index");
+const fs = require('fs')
+const { SpeechRecorder } = require('../dist/index')
 
-console.log("Recording...");
-const recorder = new SpeechRecorder();
-const writeStream = fs.createWriteStream("audio.raw");
+console.log('Recording...')
+const recorder = new SpeechRecorder()
+const writeStream = fs.createWriteStream('audio.raw')
 recorder.start({
-  onAudio: (audio, speaking, speech, volume, silence) => {
-    console.log(volume);
+  onChunkStart: (leadingBuffer) => {
+    writeStream.write(leadingBuffer)
   },
-});
+  onAudio: (audio, speech) => {
+    if (speech) {
+      writeStream.write(audio)
+    }
+  },
+  onChunkEnd: () => {
+    writeStream.end()
+    process.exit(0)
+  },
+})
